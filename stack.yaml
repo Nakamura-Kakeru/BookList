@@ -1,0 +1,67 @@
+Resources:
+  ec2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: キー名
+      ImageId: ami-02892a4ea9bfa2192
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          SubnetId: !Ref subnet
+          GroupSet:
+            - !Ref sg
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-ec2
+
+  sg:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow ssh
+      GroupName: !Sub ${AWS::StackName}-sg
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: クライアントのグローバルIP/32
+
+  vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+
+  subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref vpc
+      CidrBlock: 10.0.0.0/24
+      AvailabilityZone: ap-northeast-1a
+
+  roottable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref vpc
+
+  rootToInternet:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref roottable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref igw
+
+  igw:
+    Type: AWS::EC2::InternetGateway
+    Properties: {}
+
+  EC2VPCG3TFW2:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref vpc
+      InternetGatewayId: !Ref igw
+
+  EC2SRTA2E350:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref subnet
+      RouteTableId: !Ref roottable
